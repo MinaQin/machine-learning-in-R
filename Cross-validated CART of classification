@@ -1,0 +1,22 @@
+# Cross-validated CART model
+set.seed(3421)
+train.cart = train(useful ~ .,
+                   data = Train,
+                   method = "rpart",
+                   tuneGrid = data.frame(cp=seq(0, 0.1, 0.02)),
+                   trControl = trainControl(method="cv", number=5))
+train.cart
+train.cart$results
+
+ggplot(train.cart$results, aes(x = cp, y = Accuracy)) + 
+  geom_point(size = 2) + 
+  geom_line() + 
+  ylab("CV Accuracy") + 
+  theme_bw() + 
+  theme(axis.title=element_text(size=18), axis.text=element_text(size=18))
+
+mod.cart = train.cart$finalModel
+prp(mod.cart)
+
+predict.cart = predict(mod.cart, newdata = Test, type = "class") 
+table(Test$useful, predict.cart)
