@@ -1,0 +1,72 @@
+random forest
+set.seed(311)
+train.rf = train(useful ~ .,
+                 data = Train,
+                 method = "rf",
+                 tuneGrid = data.frame(mtry = 1:120),
+                 trControl = trainControl(method = "cv", number = 5, verboseIter = TRUE))
+train.rf
+train.rf$results
+
+mod_rf = train.rf$finalModel
+predict_rf = predict(mod_rf, newdata = Test)
+table(Test$useful, predict_rf)
+
+
+###predict with bootstrap
+
+boot.accuracy.rf <- function(data,indices){
+  data<-ggtm_complete[indices,]
+  predict = predict(mod.boost, newdata = data, type = "class") 
+  table<-table(data$useful, predict)
+  accuracy<-sum(diag(table))/sum(table)
+  return(accuracy)
+  
+}
+
+boot.TPR.rf <- function(data,indices){
+  data<-ggtm_complete[indices,]
+  predict = predict(mod.boost, newdata = data, type = "class") 
+  table<-table(data$useful, predict)
+  TPR<-table[2,2]/(table[2,1]+table[2,2])
+  return(TPR)
+  
+}
+
+boot.FPR.rf <- function(data,indices){
+  data<-ggtm_complete[indices,]
+  predict = predict(mod.boost, newdata = data, type = "class") 
+  table<-table(data$useful, predict)
+  FPR<-table[1,2]/(table[1,1]+table[1,2])
+  return(FPR)
+  
+}
+
+
+boot.accuracy.rf.confi <-boot(data=Test, statistic = boot.accuracy.rf, R=100000)
+boot.accuracy.rf.confi
+
+boot.TPR.rf.confi <-boot(data=Test, statistic = boot.TPR.rf, R=100000)
+boot.TPR.rf.confi
+
+boot.FPR.rf.confi <-boot(data=Test, statistic = boot.FPR.rf, R=100000)
+boot.FPR.rf.confi
+
+boot.ci(boot.accuracy.rf.confi, conf = 0.95,type = "basic")
+boot.ci(boot.TPR.rf.confi, conf = 0.95,type = "basic")
+boot.ci(boot.FPR.rf.confi, conf = 0.95,type = "basic")
+
+###problem c
+Log = glm(useful ~ ., data = Train, family = "binomial")
+
+summary(Log)
+
+# Predictions on test set
+PredictLog = predict(Log, newdata = Test, type = "response")
+table(Test$useful, PredictLog > 0.6)
+table<-table(Test$useful, PredictLog)
+TPR<-table[2,2]/(table[2,1]+table[2,2])
+FPR<-table[1,2]/(table[1,1]+table[1,2])
+TPR
+FPR
+
