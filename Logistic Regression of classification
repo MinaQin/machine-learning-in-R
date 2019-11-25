@@ -1,0 +1,9 @@
+#Logistic Regression
+
+Log = glm(useful ~ ., data = Train, family = "binomial")
+
+summary(Log)
+
+# Predictions on test set
+PredictLog = predict(Log, newdata = Test, type = "response")
+table(Test$useful, PredictLog > 0.5)
