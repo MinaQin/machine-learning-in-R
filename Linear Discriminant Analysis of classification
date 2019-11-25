@@ -1,0 +1,7 @@
+# Linear Discriminant Analysis
+
+library(MASS)
+lda.mod = lda(useful ~ ., data = Train)
+
+predict.lda = predict(lda.mod, newdata = Test)$class
+table(Test$useful, predict.lda)
