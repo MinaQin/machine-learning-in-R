@@ -1,0 +1,5 @@
+set.seed(123) 
+spl = sample.split(ggtm_complete$useful, SplitRatio = 0.7)
+
+Train = ggtm_complete %>% filter(spl == TRUE)
+Test = ggtm_complete %>% filter(spl == FALSE)
