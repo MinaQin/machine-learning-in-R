@@ -1,0 +1,25 @@
+tGrid = expand.grid(n.trees = (7:70)*100, interaction.depth = c(4,6,8,10,12,14),
+                    shrinkage = 0.01, n.minobsinnode = 10)
+
+set.seed(232)
+
+
+train.boost <- train(useful ~ .,
+                     data = Train,
+                     method = "gbm",
+                     tuneGrid = tGrid,
+                     trControl = trainControl(method="cv", number=5, verboseIter = TRUE),
+                     metric = "Accuracy",
+                     distribution = "bernoulli")
+train.boost
+train.boost$results
+
+ggplot(train.boost$results, aes(x = n.trees, y = Accuracy, colour = as.factor(interaction.depth))) + geom_line() + 
+  ylab("CV Accuracy") + theme_bw() + theme(axis.title=element_text(size=18), axis.text=element_text(size=18)) + 
+  scale_color_discrete(name = "interaction.depth")
+
+mod.boost = train.boost$finalModel
+
+Test.mm = as.data.frame(model.matrix(useful ~ . +0, data = Test))
+predict.boost = predict(mod.boost, newdata = Test.mm,n.tree=900,type = "response")
+table(Test$useful, predict.boost < 0.5) # for some reason the probabilities are flipped in gbm
