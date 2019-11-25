@@ -1,0 +1,79 @@
+setwd("/Users/qinchuqing/Documents/UCBerkeley/fall/242/hw4/")
+library(rpart)
+#install.packages()
+library(rpart.plot)
+library(caret)
+library(randomForest)
+library(gbm)
+library(caTools)
+library(dplyr)
+library(ggplot2)
+library(tm)
+#library(tm.plugin.webmining)
+library(SnowballC)
+library(wordcloud)
+library(boot)
+hw4 <- read.csv("/Users/qinchuqing/Documents/UCBerkeley/fall/242/hw4/ggplot2questions2016_17.csv",stringsAsFactors = FALSE)
+title_deal <- Corpus(VectorSource(hw4$Title))#depart
+title_deal <- tm_map(title_deal, tolower)#change to lower case
+title_deal <- tm_map(title_deal, removePunctuation) #deal with punctuation
+title_deal <- tm_map(title_deal, removeWords, stopwords("english"))#stop words the that
+title_deal <- tm_map(title_deal, removeNumbers)
+
+title_deal<- tm_map(title_deal, stemDocument) #stem
+
+frequencies = DocumentTermMatrix(title_deal)
+frequencies
+#Account for sparsity
+
+sparse = removeSparseTerms(frequencies, 0.9)
+sparse
+# Create data frame from the document-term matrix
+ggtm = as.data.frame(as.matrix(sparse))
+
+colnames(ggtm) = make.names(colnames(ggtm))
+#############body
+
+#deal with html tag
+Clean <- function(HTML){
+  return(gsub("<.*?>", "", HTML))
+}
+Body <- Clean(hw4$Body)
+body_deal <- Corpus(VectorSource(Body))#depart
+body_deal <- tm_map(body_deal, tolower)#change to lower case
+body_deal <- tm_map(body_deal, removePunctuation) #deal with punctuation
+body_deal <- tm_map(body_deal, removeWords, stopwords("english"))#stop words the that
+body_deal <- tm_map(body_deal, removeNumbers)
+
+
+body_deal<- tm_map(body_deal, stemDocument) #stem
+
+frequencies_body = DocumentTermMatrix(body_deal)
+frequencies_body
+# Account for sparsity
+
+# Words that appear at least 50 times:
+findFreqTerms(frequencies_body, lowfreq=50)
+# Words that appear at least 20 times:
+findFreqTerms(frequencies_body, lowfreq=20)
+sparse = removeSparseTerms(frequencies_body, 0.9)
+sparse
+# Create data frame from the document-term matrix
+ggtm_body = as.data.frame(as.matrix(sparse))
+
+colnames(ggtm_body) = make.names(colnames(ggtm_body))
+
+#merge  
+
+title_diff = setdiff(colnames(ggtm), colnames(ggtm_body))
+body_diff = setdiff(colnames(ggtm_body), colnames(ggtm))
+ggtm_body[, c(as.character(title_diff))] = 0
+ggtm[, c(as.character(body_diff))] = 0
+ggtm_body = ggtm_body[ , order(names(ggtm_body))]
+ggtm = ggtm[ , order(names(ggtm))]
+ggtm_complete = ggtm_body + ggtm
+
+# add dependent variable
+hw4$useful = as.factor(as.numeric(hw4$Score >= 1))
+ggtm_complete$useful = hw4$useful
+
